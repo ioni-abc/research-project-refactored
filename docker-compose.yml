@@ -1,20 +1,54 @@
 services:
   auth:
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile.auth
     container_name: auth-service
     ports:
       - "8001:8001"
     environment:
-      - AUTH_SERVICE_PORT=8001
-      - AUTH_SERVICE_HOST=0.0.0.0
-      - JWT_SECRET_KEY=super-secret-key
+      - JWT_SECRET_KEY=key
       - JWT_ALGORITHM=HS256
       - JWT_EXPIRATION_MINUTES=1440
-      - TEST_USERNAME=testuser
-      - TEST_PASSWORD=testpass
     volumes:
       - ./services:/app/services
     command: python -m uvicorn services.auth:app --host 0.0.0.0 --port 8001 --reload
+    networks:
+      - research-network
+
+  order:
+    build:
+      context: .
+      dockerfile: Dockerfile.order
+    container_name: order-service
+    ports:
+      - "8002:8002"
+    environment:
+      - JWT_SECRET_KEY=key
+      - JWT_ALGORITHM=HS256
+    volumes:
+      - ./services:/app/services
+    command: python -m uvicorn services.order:app --host 0.0.0.0 --port 8002 --reload
+    depends_on:
+      - auth
+    networks:
+      - research-network
+
+  payment:
+    build:
+      context: .
+      dockerfile: Dockerfile.payment
+    container_name: payment-service
+    ports:
+      - "8003:8003"
+    environment:
+      - JWT_SECRET_KEY=key
+      - JWT_ALGORITHM=HS256
+    volumes:
+      - ./services:/app/services
+    command: python -m uvicorn services.payment:app --host 0.0.0.0 --port 8003 --reload
+    depends_on:
+      - auth
     networks:
       - research-network
 

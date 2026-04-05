@@ -1,15 +1,11 @@
-"""
-Auth Service - Minimal mock authentication for observability testing.
-Generates and verifies JWT tokens. Not production-grade auth.
-"""
-
 import os
+import uvicorn
+
 from datetime import datetime, timedelta, timezone
 
 from fastapi import FastAPI, HTTPException
 from jose import jwt
 from pydantic import BaseModel
-
 
 JWT_SECRET = os.getenv("JWT_SECRET_KEY", "secret")
 JWT_ALGO = "HS256"
@@ -59,5 +55,4 @@ async def verify(token: str):
     return {"username": username}
 
 if __name__ == "__main__":
-    import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8001)

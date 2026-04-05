@@ -1,17 +1,13 @@
-"""
-Test Script - Simulates microservice workflow
-Workflow: Auth (login) → Order (place order) → Payment (process payment)
-"""
-
-import requests
-import json
+import argparse
 import time
 from typing import Optional
 
+import requests
+
 # Service URLs
 AUTH_SERVICE = "http://localhost:8001"
-ORDER_SERVICE = "http://localhost:8002"  # Will exist later
-PAYMENT_SERVICE = "http://localhost:8003"  # Will exist later
+ORDER_SERVICE = "http://localhost:8002"
+PAYMENT_SERVICE = "http://localhost:8003"
 
 # Test data
 TEST_USERNAME = "testuser"
@@ -66,9 +62,8 @@ class TestRunner:
         try:
             headers = {"Authorization": f"Bearer {self.token}"}
             order_data = {
-                "user_id": TEST_USERNAME,
-                "items": [{"product_id": "PROD-001", "quantity": 2}],
-                "total_amount": 99.99
+                "product_id": "PROD-001",
+                "amount": 99.99
             }
             
             response = requests.post(
@@ -180,8 +175,6 @@ class TestRunner:
 
 def main():
     """Main test runner"""
-    import argparse
-    
     parser = argparse.ArgumentParser(description="Test microservice workflow")
     parser.add_argument("--runs", type=int, default=1, help="Number of workflow runs (default: 1)")
     parser.add_argument("--delay", type=float, default=1, help="Delay between runs in seconds (default: 1)")

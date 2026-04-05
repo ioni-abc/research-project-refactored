@@ -1,30 +1,46 @@
-from fastapi import HTTPException, status
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from jose import jwt
 import os
+
+from fastapi import HTTPException, status
+from jose import jwt
 
 JWT_SECRET = os.getenv("JWT_SECRET_KEY", "secret")
 JWT_ALGO = "HS256"
 
-security = HTTPBearer()
 
-
-def verify_token(credentials: HTTPAuthorizationCredentials) -> str:
+def verify_token_from_header(authorization: str) -> str:
     """
-    Verify JWT token from Authorization header.
-    Used with FastAPI's Depends() for automatic header handling.
+    Extract and verify JWT token from Authorization header.
+    Handles Bearer scheme parsing and token validation.
     
     Args:
-        credentials: HTTPAuthenticationCredentials from FastAPI's HTTPBearer
+        authorization: Authorization header value (e.g., "Bearer <token>")
     
     Returns:
         username from token
     
     Raises:
-        HTTPException: If token is invalid or expired
+        HTTPException: If header missing, invalid format, or token invalid
     """
-    token = credentials.credentials
+    if not authorization:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Missing authorization header"
+        )
     
+    try:
+        scheme, token = authorization.split()
+        if scheme.lower() != "bearer":
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid authorization scheme"
+            )
+    except ValueError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid authorization format"
+        )
+    
+    # Verify token
     try:
         payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGO])
         username = payload.get("sub")
