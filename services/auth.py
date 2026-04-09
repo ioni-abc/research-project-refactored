@@ -7,11 +7,13 @@ from fastapi import FastAPI, HTTPException
 from jose import jwt
 from pydantic import BaseModel
 
+from services.observability import setup_observability
+from services.faults import service_unavailable
+
 JWT_SECRET = os.getenv("JWT_SECRET_KEY", "secret")
 JWT_ALGO = "HS256"
 TOKEN_EXPIRE_MINS = 1440
 
-app = FastAPI(title="Auth Service")
 
 
 class LoginRequest(BaseModel):
@@ -22,6 +24,9 @@ class TokenResponse(BaseModel):
     access_token: str
     token_type: str
 
+app = FastAPI(title="Auth Service")
+
+setup_observability(app, "auth-service")
 
 def create_token(username: str) -> str:
     payload = {
@@ -43,6 +48,11 @@ def verify_token(token: str) -> str:
 @app.post("/auth/login", response_model=TokenResponse)
 async def login(creds: LoginRequest):
     """Login with any username/password - returns a token"""
+
+    # Trigger Fault Injection - Service Unavailable RF12
+    if os.getenv("INJECT_SERVICE_UNAVAILABLE") == "true":
+        service_unavailable()
+
     # Mock: accept any credentials
     token = create_token(creds.username)
     return TokenResponse(access_token=token, token_type="bearer")

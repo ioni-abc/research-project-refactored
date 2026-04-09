@@ -1,3 +1,4 @@
+import os
 import uuid
 import uvicorn
 
@@ -6,6 +7,8 @@ from datetime import datetime
 from fastapi import FastAPI, Header
 from pydantic import BaseModel
 
+from services.observability import setup_observability
+from services.faults import cpu_hog
 from services.utils import verify_token_from_header
 
 # In-memory order storage
@@ -27,6 +30,7 @@ class OrderResponse(BaseModel):
 
 app = FastAPI(title="Order Service", version="1.0.0")
 
+setup_observability(app, "order-service")
 
 @app.post("/orders", response_model=OrderResponse)
 async def create_order(
@@ -40,6 +44,10 @@ async def create_order(
     """
     # Verify token (handles all validation and Bearer parsing)
     user_id = verify_token_from_header(authorization)
+
+    # Trigger Fault Injection - CPU Hog PF31
+    if os.getenv("INJECT_CPU_HOG") == "true":
+        cpu_hog()
     
     # Create order
     order_id = str(uuid.uuid4())[:8]

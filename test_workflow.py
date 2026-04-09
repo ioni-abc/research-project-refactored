@@ -117,7 +117,7 @@ class TestRunner:
                 f"{PAYMENT_SERVICE}/payments",
                 json=payment_data,
                 headers=headers,
-                timeout=5
+                timeout=5 # change to 10 if you want the test to succeed 
             )
             
             if response.status_code == 200:
@@ -184,8 +184,8 @@ def main():
     print("MICROSERVICE WORKFLOW TEST")
     print("="*60)
     print(f"Auth Service:    {AUTH_SERVICE}")
-    print(f"Order Service:   {ORDER_SERVICE} (coming soon)")
-    print(f"Payment Service: {PAYMENT_SERVICE} (coming soon)")
+    print(f"Order Service:   {ORDER_SERVICE}")
+    print(f"Payment Service: {PAYMENT_SERVICE}")
     print("="*60 + "\n")
     
     for run in range(1, args.runs + 1):

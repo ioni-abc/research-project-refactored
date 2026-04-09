@@ -1,3 +1,4 @@
+import logging
 import os
 
 from fastapi import HTTPException, status
@@ -58,3 +59,10 @@ def verify_token_from_header(authorization: str) -> str:
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid token"
         )
+    
+def setup_logging(service_name: str):
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s | %(levelname)-8s | %(name)s | %(message)s",
+    )
+    return logging.getLogger(service_name)

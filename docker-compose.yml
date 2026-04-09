@@ -6,9 +6,8 @@ services:
     container_name: auth-service
     ports:
       - "8001:8001"
+    env_file: .env
     environment:
-      - JWT_SECRET_KEY=key
-      - JWT_ALGORITHM=HS256
       - JWT_EXPIRATION_MINUTES=1440
     volumes:
       - ./services:/app/services
@@ -23,9 +22,7 @@ services:
     container_name: order-service
     ports:
       - "8002:8002"
-    environment:
-      - JWT_SECRET_KEY=key
-      - JWT_ALGORITHM=HS256
+    env_file: .env
     volumes:
       - ./services:/app/services
     command: python -m uvicorn services.order:app --host 0.0.0.0 --port 8002 --reload
@@ -41,9 +38,7 @@ services:
     container_name: payment-service
     ports:
       - "8003:8003"
-    environment:
-      - JWT_SECRET_KEY=key
-      - JWT_ALGORITHM=HS256
+    env_file: .env
     volumes:
       - ./services:/app/services
     command: python -m uvicorn services.payment:app --host 0.0.0.0 --port 8003 --reload
@@ -51,7 +46,46 @@ services:
       - auth
     networks:
       - research-network
+  
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    container_name: jaeger
+    environment:
+      - COLLECTOR_OTLP_ENABLED=true
+    ports:
+      - "16686:16686"  # Jaeger UI
+      - "4317:4317"    # OTLP gRPC receiver
+    networks:
+      - research-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:16686"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+ 
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+    depends_on:
+      - auth
+      - order
+      - payment
+      - jaeger
+    networks:
+      - research-network
+ 
 
 networks:
   research-network:
     driver: bridge
+
+volumes:
+  prometheus_data:

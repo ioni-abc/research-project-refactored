@@ -8,3 +8,11 @@ python-dotenv==1.0.0
 httpx==0.25.2
 ruff>=0.5.0
 requests>=2.32.4
+
+# observability packages
+opentelemetry-api>=1.25.0
+opentelemetry-sdk>=1.25.0
+opentelemetry-instrumentation-fastapi>=0.45b0
+opentelemetry-instrumentation-httpx>=0.45b0
+opentelemetry-exporter-otlp>=1.25.0
+prometheus-fastapi-instrumentator>=6.1.0

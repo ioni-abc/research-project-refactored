@@ -1,3 +1,4 @@
+import os
 import uuid
 import uvicorn
 
@@ -6,6 +7,8 @@ from datetime import datetime
 from fastapi import FastAPI, Header
 from pydantic import BaseModel
 
+from services.observability import setup_observability
+from services.faults import long_response_time
 from services.utils import verify_token_from_header
 
 # In-memory payment storage
@@ -29,6 +32,7 @@ class PaymentResponse(BaseModel):
 
 app = FastAPI(title="Payment Service", version="1.0.0")
 
+setup_observability(app, "payment-service")
 
 @app.post("/payments", response_model=PaymentResponse)
 async def process_payment(
@@ -42,6 +46,9 @@ async def process_payment(
     """
     # Verify token (handles all validation and Bearer parsing)
     user_id = verify_token_from_header(authorization)
+
+    if os.getenv("INJECT_LONG_RESPONSE_TIME") == "true":
+        await long_response_time()
     
     # Process payment
     payment_id = str(uuid.uuid4())[:8]
