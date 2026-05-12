@@ -11,6 +11,10 @@ from services.observability import setup_observability
 from services.faults import cpu_hog
 from services.utils import verify_token_from_header
 
+from opentelemetry import trace
+
+tracer = trace.get_tracer(__name__)
+
 # In-memory order storage
 orders_db = {}
 
@@ -43,11 +47,13 @@ async def create_order(
     Format: "Bearer <token>"
     """
     # Verify token (handles all validation and Bearer parsing)
-    user_id = verify_token_from_header(authorization)
+    with tracer.start_as_current_span("verify_token"):
+        user_id = verify_token_from_header(authorization)
 
-    # Trigger Fault Injection - CPU Hog PF31
+
     if os.getenv("INJECT_CPU_HOG") == "true":
-        cpu_hog()
+        with tracer.start_as_current_span("cpu_hog"):
+            cpu_hog()
     
     # Create order
     order_id = str(uuid.uuid4())[:8]

@@ -18,6 +18,12 @@ def cpu_hog():
     for i in range(2 * 10**7):
         count += i
 
+async def long_response_time():
+    """
+    PF20: A fault injection that causes Long Response Time.
+    """
+    logger.info("PF20: INJECTED LONG RESPONSE TIME FAULT")
+    await asyncio.sleep(8)
 
 def service_unavailable():
     """
@@ -25,10 +31,3 @@ def service_unavailable():
     """
     logger.info("RF12: INJECTED SERVICE UNAVAILABLE FAULT")
     raise HTTPException(status_code=503, detail="Service Unavailable")
-
-async def long_response_time():
-    """
-    PF20: A fault injection that causes Long Response Time.
-    """
-    logger.info("PF20: INJECTED LONG RESPONSE TIME FAULT")
-    await asyncio.sleep(8)

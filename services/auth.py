@@ -10,9 +10,13 @@ from pydantic import BaseModel
 from services.observability import setup_observability
 from services.faults import service_unavailable
 
-JWT_SECRET = os.getenv("JWT_SECRET_KEY", "secret")
-JWT_ALGO = "HS256"
-TOKEN_EXPIRE_MINS = 1440
+from opentelemetry import trace
+
+tracer = trace.get_tracer(__name__)
+
+JWT_SECRET = os.getenv("JWT_SECRET_KEY")
+JWT_ALGO = os.getenv("JWT_ALGO")
+JWT_EXPIRATION_MINUTES = os.getenv("JWT_EXPIRATION_MINUTES")
 
 
 
@@ -31,18 +35,9 @@ setup_observability(app, "auth-service")
 def create_token(username: str) -> str:
     payload = {
         "sub": username,
-        "exp": datetime.now(timezone.utc) + timedelta(minutes=TOKEN_EXPIRE_MINS)
+        "exp": datetime.now(timezone.utc) + timedelta(minutes=int(JWT_EXPIRATION_MINUTES))
     }
     return jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGO)
-
-
-def verify_token(token: str) -> str:
-    """Verify token and return username"""
-    try:
-        payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGO])
-        return payload.get("sub")
-    except:
-        raise HTTPException(status_code=401, detail="Invalid token")
 
 
 @app.post("/auth/login", response_model=TokenResponse)
@@ -51,18 +46,13 @@ async def login(creds: LoginRequest):
 
     # Trigger Fault Injection - Service Unavailable RF12
     if os.getenv("INJECT_SERVICE_UNAVAILABLE") == "true":
-        service_unavailable()
+        with tracer.start_as_current_span("service_unavailable"):
+            service_unavailable()
 
     # Mock: accept any credentials
     token = create_token(creds.username)
     return TokenResponse(access_token=token, token_type="bearer")
 
-
-@app.post("/auth/verify")
-async def verify(token: str):
-    """Verify a token"""
-    username = verify_token(token)
-    return {"username": username}
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8001)

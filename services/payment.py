@@ -11,6 +11,10 @@ from services.observability import setup_observability
 from services.faults import long_response_time
 from services.utils import verify_token_from_header
 
+from opentelemetry import trace
+
+tracer = trace.get_tracer(__name__)
+
 # In-memory payment storage
 payments_db = {}
 
@@ -48,7 +52,8 @@ async def process_payment(
     user_id = verify_token_from_header(authorization)
 
     if os.getenv("INJECT_LONG_RESPONSE_TIME") == "true":
-        await long_response_time()
+        with tracer.start_as_current_span("long_response_time"):
+            await long_response_time()
     
     # Process payment
     payment_id = str(uuid.uuid4())[:8]
